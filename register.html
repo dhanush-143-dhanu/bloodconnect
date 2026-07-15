@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register as a Donor — BloodConnect</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2141B">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" fill="white" fill-opacity="0.9"/></svg></span>
+    <span class="brand-text"><b>Blood<span>Connect</span></b><small>SAVE LIFE, DONATE BLOOD</small></span>
+  </a>
+  <nav class="main-nav">
+    <a href="index.html">Home</a>
+    <a href="index.html#about">About Us</a>
+    <a href="find-donors.html">Find Donors</a>
+    <a href="index.html#blood-banks">Blood Banks</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+  <div class="header-actions">
+    <a href="dashboard.html" class="btn btn-outline">Login</a>
+    <a href="register.html" class="btn btn-primary">Register</a>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">DONOR REGISTRATION</span>
+    <h1>Register as a blood donor</h1>
+    <p>Takes under a minute. Your live location helps us match you to nearby emergencies only — never shared publicly.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:32px;">
+  <div class="container" style="max-width:760px;">
+    <div class="panel">
+      <form id="registerForm">
+        <div class="form-grid">
+          <div class="field-block full">
+            <label>Full name</label>
+            <input type="text" id="fName" placeholder="e.g. Aditi Sharma" required>
+          </div>
+
+          <div class="field-block full">
+            <label>Blood group</label>
+            <div class="blood-group-picker" id="bgPicker">
+              <div class="bg-chip" data-value="O-">O-</div>
+              <div class="bg-chip" data-value="O+">O+</div>
+              <div class="bg-chip" data-value="A-">A-</div>
+              <div class="bg-chip" data-value="A+">A+</div>
+              <div class="bg-chip" data-value="B-">B-</div>
+              <div class="bg-chip" data-value="B+">B+</div>
+              <div class="bg-chip" data-value="AB-">AB-</div>
+              <div class="bg-chip" data-value="AB+">AB+</div>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label>Phone number</label>
+            <input type="tel" id="fPhone" placeholder="+91 98765 43210" required>
+          </div>
+          <div class="field-block">
+            <label>Age</label>
+            <input type="number" id="fAge" min="18" max="65" placeholder="18–65" required>
+          </div>
+
+          <div class="field-block full">
+            <label>Live location</label>
+            <div class="geo-box">
+              <div class="geo-status" id="geoStatus"><span class="led"></span> <span>Location not captured yet</span></div>
+              <button type="button" class="btn btn-outline-red btn-sm" id="captureLocBtn">Use My Location</button>
+            </div>
+            <div class="hint">We use your browser's Geolocation API once at signup — this powers distance-based matching during emergencies.</div>
+          </div>
+
+          <div class="field-block full">
+            <label>Availability status</label>
+            <select id="fAvailability">
+              <option value="true">Available</option>
+              <option value="false">Unavailable right now</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block mt-24">Complete Registration</button>
+        <p class="small-muted text-center mt-24">By registering you confirm you meet basic donor eligibility (age 18–65, in good health, no donation in the last 90 days).</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <span>© 2026 BloodConnect. Demo project for educational purposes.</span>
+    <span><a href="index.html">Back to home</a></span>
+  </div>
+</footer>
+
+<script src="js/storage.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/notify.js"></script>
+<script>
+  let selectedGroup = null;
+  let capturedLoc = null;
+
+  document.getElementById('bgPicker').addEventListener('click', (e) => {
+    const chip = e.target.closest('.bg-chip');
+    if (!chip) return;
+    document.querySelectorAll('.bg-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    selectedGroup = chip.dataset.value;
+  });
+
+  document.getElementById('captureLocBtn').addEventListener('click', async () => {
+    const statusEl = document.getElementById('geoStatus');
+    statusEl.className = 'geo-status';
+    statusEl.innerHTML = '<span class="led"></span> <span>Locating…</span>';
+    try {
+      capturedLoc = await Geo.locate();
+      statusEl.className = 'geo-status ok';
+      statusEl.innerHTML = `<span class="led"></span> <span>Captured: ${capturedLoc.lat.toFixed(3)}, ${capturedLoc.lng.toFixed(3)}</span>`;
+    } catch (err) {
+      statusEl.className = 'geo-status err';
+      statusEl.innerHTML = '<span class="led"></span> <span>Permission denied — using approximate city location</span>';
+      capturedLoc = { lat: 12.9716 + (Math.random() - 0.5) * 0.05, lng: 77.5946 + (Math.random() - 0.5) * 0.05 };
+    }
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!selectedGroup) { Notify.toast('Please select a blood group.', 'info'); return; }
+    if (!capturedLoc) { Notify.toast('Please capture your location first.', 'info'); return; }
+
+    const donor = DB.addDonor({
+      name: document.getElementById('fName').value.trim(),
+      bloodGroup: selectedGroup,
+      phone: document.getElementById('fPhone').value.trim(),
+      age: Number(document.getElementById('fAge').value),
+      lat: capturedLoc.lat,
+      lng: capturedLoc.lng,
+      available: document.getElementById('fAvailability').value === 'true',
+    });
+    DB.setSession(donor.id);
+    Notify.toast('Registration complete — welcome to BloodConnect!', 'success');
+    setTimeout(() => window.location.href = 'dashboard.html', 700);
+  });
+</script>
+</body>
+</html>

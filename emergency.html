@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emergency Request — BloodConnect</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2141B">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" fill="white" fill-opacity="0.9"/></svg></span>
+    <span class="brand-text"><b>Blood<span>Connect</span></b><small>SAVE LIFE, DONATE BLOOD</small></span>
+  </a>
+  <nav class="main-nav">
+    <a href="index.html">Home</a>
+    <a href="index.html#about">About Us</a>
+    <a href="find-donors.html">Find Donors</a>
+    <a href="index.html#blood-banks">Blood Banks</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+  <div class="header-actions">
+    <a href="dashboard.html" class="btn btn-outline">Login</a>
+    <a href="register.html" class="btn btn-primary">Register</a>
+  </div>
+</header>
+
+<section class="page-hero" style="background:var(--pink-100);">
+  <div class="container">
+    <span class="eyebrow">🚨 EMERGENCY REQUEST</span>
+    <h1>Raise an emergency blood request</h1>
+    <p>We broadcast to every compatible, available donor within range at the same time. The first to accept is connected to you directly.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:26px;">
+  <div class="container" style="max-width:820px;">
+
+    <div class="panel" id="requestPanel">
+      <div class="form-grid">
+        <div class="field-block">
+          <label>Patient / requester name</label>
+          <input type="text" id="reqName" placeholder="e.g. City Hospital, Ward 4">
+        </div>
+        <div class="field-block">
+          <label>Blood group required</label>
+          <select id="reqGroup" required>
+            <option value="">Select blood group</option>
+            <option>O-</option><option>O+</option><option>A-</option><option>A+</option>
+            <option>B-</option><option>B+</option><option>AB-</option><option>AB+</option>
+          </select>
+        </div>
+        <div class="field-block full">
+          <label>Urgency level</label>
+          <div class="urgency-picker" id="urgencyPicker">
+            <div class="urgency-chip critical" data-value="critical"><b>Critical</b><span>Needed within 1 hr</span></div>
+            <div class="urgency-chip moderate" data-value="moderate"><b>Moderate</b><span>Needed today</span></div>
+            <div class="urgency-chip low" data-value="low"><b>Low</b><span>Needed this week</span></div>
+          </div>
+        </div>
+        <div class="field-block full">
+          <label>Search radius</label>
+          <select id="reqRadius">
+            <option value="5">5 Km</option>
+            <option value="10" selected>10 Km</option>
+            <option value="25">25 Km</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block mt-24" id="broadcastBtn">📡 Broadcast Emergency Request</button>
+    </div>
+
+    <div class="panel mt-24" id="broadcastPanel" style="display:none;">
+      <div class="flex-between">
+        <div>
+          <h3 style="font-family:var(--font-display);margin:0 0 4px;">Broadcasting to nearby donors…</h3>
+          <p class="small-muted" id="broadcastSub">Notifying compatible donors now.</p>
+        </div>
+        <div class="countdown" id="countdown">00:00</div>
+      </div>
+      <div class="broadcast-list mt-24" id="broadcastList"></div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <span>© 2026 BloodConnect. Demo project for educational purposes.</span>
+    <span><a href="index.html">Back to home</a></span>
+  </div>
+</footer>
+
+<script src="js/storage.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/seed.js"></script>
+<script>
+  seedIfEmpty();
+  let urgency = 'critical';
+  document.getElementById('urgencyPicker').querySelector('[data-value="critical"]').classList.add('active');
+
+  document.getElementById('urgencyPicker').addEventListener('click', (e) => {
+    const chip = e.target.closest('.urgency-chip');
+    if (!chip) return;
+    document.querySelectorAll('.urgency-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    urgency = chip.dataset.value;
+  });
+
+  let timerInterval = null;
+  let acceptTimeout = null;
+
+  async function broadcast() {
+    const group = document.getElementById('reqGroup').value;
+    if (!group) { Notify.toast('Please select the blood group required.', 'info'); return; }
+    const radius = parseFloat(document.getElementById('reqRadius').value);
+
+    let center = { lat: 12.9716, lng: 77.5946 };
+    try { center = await Geo.locate(); } catch (e) { /* fall back to default city center */ }
+
+    const donors = DB.getDonors()
+      .map(d => ({ ...d, distance: Geo.distanceKm(center, { lat: d.lat, lng: d.lng }) }))
+      .filter(d => d.available && Matching.isCompatible(d.bloodGroup, group) && d.distance <= radius)
+      .sort((a, b) => a.distance - b.distance);
+
+    const req = DB.addRequest({
+      requesterName: document.getElementById('reqName').value.trim() || 'Anonymous requester',
+      bloodGroup: group, urgency, radius, lat: center.lat, lng: center.lng,
+    });
+
+    document.getElementById('requestPanel').style.display = 'none';
+    document.getElementById('broadcastPanel').style.display = 'block';
+    document.getElementById('broadcastSub').textContent =
+      donors.length ? `${donors.length} compatible donor(s) found — sending SMS, email and in-app alerts.` : 'No compatible donors in range — widen the radius and try again.';
+
+    const listEl = document.getElementById('broadcastList');
+    if (!donors.length) { listEl.innerHTML = ''; return; }
+
+    listEl.innerHTML = donors.map(d => `
+      <div class="donor-item" id="row-${d.id}">
+        <div class="donor-avatar">${d.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+        <div class="meta"><b>${d.name}</b><span><span class="bg-tag">${d.bloodGroup}</span>${d.distance.toFixed(1)} km away</span></div>
+        <div class="small-muted" id="status-${d.id}">Queued…</div>
+      </div>
+    `).join('');
+
+    // stagger simulated notification delivery
+    donors.forEach((d, i) => {
+      setTimeout(() => {
+        const row = document.getElementById(`row-${d.id}`);
+        const status = document.getElementById(`status-${d.id}`);
+        if (!row) return;
+        row.classList.add('notified');
+        status.textContent = 'Notified ✓';
+        Notify.toast(`Alert sent to ${d.name} (${d.bloodGroup}, ${d.distance.toFixed(1)} km)`, 'info', 2200);
+      }, i * 280);
+    });
+
+    Notify.browserNotify('Emergency blood request broadcasting', `Searching for ${group} donors within ${radius} km.`);
+
+    // countdown
+    let seconds = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      document.getElementById('countdown').textContent = `${m}:${s}`;
+    }, 1000);
+
+    // simulate the first donor accepting after a short, semi-random delay
+    clearTimeout(acceptTimeout);
+    if (donors.length) {
+      const winner = donors[Math.floor(Math.random() * Math.min(3, donors.length))];
+      acceptTimeout = setTimeout(() => {
+        clearInterval(timerInterval);
+        const row = document.getElementById(`row-${winner.id}`);
+        const status = document.getElementById(`status-${winner.id}`);
+        if (row) { row.classList.remove('notified'); row.classList.add('accepted'); status.textContent = '✅ Accepted — connecting'; }
+        DB.updateRequest(req.id, { status: 'matched', matchedDonorId: winner.id });
+        Notify.toast(`${winner.name} accepted the request! Contact: ${winner.phone}`, 'success', 6000);
+        Notify.browserNotify('Donor found!', `${winner.name} accepted — ${winner.phone}`);
+      }, 2600 + donors.length * 280);
+    }
+  }
+
+  document.getElementById('broadcastBtn').addEventListener('click', broadcast);
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Donor Dashboard — BloodConnect</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2141B">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" fill="white" fill-opacity="0.9"/></svg></span>
+    <span class="brand-text"><b>Blood<span>Connect</span></b><small>SAVE LIFE, DONATE BLOOD</small></span>
+  </a>
+  <nav class="main-nav">
+    <a href="index.html">Home</a>
+    <a href="index.html#about">About Us</a>
+    <a href="find-donors.html">Find Donors</a>
+    <a href="index.html#blood-banks">Blood Banks</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+  <div class="header-actions">
+    <a href="register.html" class="btn btn-primary">Register</a>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">DONOR DASHBOARD</span>
+    <h1>Your donor profile</h1>
+    <p>Manage your availability, view your digital donor ID and track your donation impact.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:26px;">
+  <div class="container">
+
+    <!-- Login gate -->
+    <div class="panel" id="loginPanel" style="max-width:460px;margin:0 auto;">
+      <h3 style="font-family:var(--font-display);margin:0 0 6px;">Sign in with your phone number</h3>
+      <p class="small-muted" style="margin:0 0 18px;">Demo login — enter the phone number you registered with.</p>
+      <div class="field-block">
+        <input type="tel" id="loginPhone" placeholder="+91 98765 43210">
+      </div>
+      <button class="btn btn-primary btn-block mt-24" id="loginBtn">View My Dashboard</button>
+      <p class="small-muted text-center mt-24">No account yet? <a href="register.html" style="color:var(--red);font-weight:700;">Register as a donor</a></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dash-grid" id="dashPanel" style="display:none;">
+      <div>
+        <div class="id-card" id="idCard">
+          <div class="id-top">
+            <span class="id-bg" id="idBg">A+</span>
+            <span style="font-size:11px;opacity:0.85;">DONOR ID</span>
+          </div>
+          <div class="id-name" id="idName">—</div>
+          <div class="id-meta" id="idMeta">—</div>
+          <div class="qr-wrap" id="qrHolder"></div>
+        </div>
+        <button class="btn btn-outline btn-block mt-24" id="logoutBtn">Log out</button>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="flex-between">
+            <div>
+              <h3 style="font-family:var(--font-display);margin:0 0 4px;">Availability</h3>
+              <p class="small-muted" style="margin:0;">Toggle off if you can't donate right now — you won't receive emergency alerts.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="availToggle"><span class="slider-toggle"></span></label>
+          </div>
+        </div>
+
+        <div class="panel mt-24">
+          <h3 style="font-family:var(--font-display);margin:0 0 14px;">Badges</h3>
+          <div class="badge-row" id="badgeRow"></div>
+        </div>
+
+        <div class="panel mt-24">
+          <div class="flex-between">
+            <h3 style="font-family:var(--font-display);margin:0;">Donation history</h3>
+            <button class="btn btn-primary btn-sm" id="logDonationBtn">+ Log a donation</button>
+          </div>
+          <div id="historyList" class="mt-24"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <span>© 2026 BloodConnect. Demo project for educational purposes.</span>
+    <span><a href="index.html">Back to home</a></span>
+  </div>
+</footer>
+
+<script src="js/storage.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/notify.js"></script>
+
+<script>
+  const BADGES = [
+    { key: 'bronze', label: 'First Drop', min: 1 },
+    { key: 'silver', label: 'Regular Hero', min: 3 },
+    { key: 'gold', label: 'Life Saver', min: 5 },
+    { key: 'legend', label: 'BloodConnect Legend', min: 10 },
+  ];
+
+  function renderDashboard(donor) {
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('dashPanel').style.display = 'grid';
+
+    document.getElementById('idBg').textContent = donor.bloodGroup;
+    document.getElementById('idName').textContent = donor.name;
+    document.getElementById('idMeta').textContent = `${donor.phone} · ID ${donor.id}`;
+
+    const qrHolder = document.getElementById('qrHolder');
+    qrHolder.innerHTML = '';
+    if (window.QRCode) {
+      new QRCode(qrHolder, { text: `BLOODCONNECT-DONOR:${donor.id}:${donor.bloodGroup}`, width: 120, height: 120, colorDark: '#17151A', colorLight: '#ffffff' });
+    } else {
+      qrHolder.textContent = 'QR unavailable offline';
+    }
+
+    document.getElementById('availToggle').checked = !!donor.available;
+
+    const badgeRow = document.getElementById('badgeRow');
+    badgeRow.innerHTML = BADGES.map(b => {
+      const unlocked = donor.donations >= b.min;
+      return `<div class="trophy ${unlocked ? '' : 'locked'}" title="${b.label} — ${b.min}+ donations">
+        ${unlocked ? '🏆' : '🔒'}
+      </div>`;
+    }).join('') + `<span class="small-muted" style="align-self:center;margin-left:6px;">${donor.donations} total donation(s)</span>`;
+
+    const history = document.getElementById('historyList');
+    if (donor.donations === 0) {
+      history.innerHTML = `<div class="empty-state" style="padding:30px;"><span class="small-muted">No donations logged yet. Every donation can help up to 3 people.</span></div>`;
+    } else {
+      let rows = '';
+      for (let i = 0; i < donor.donations; i++) {
+        const daysAgo = (donor.donations - i) * 47;
+        const d = new Date(Date.now() - daysAgo * 86400000);
+        rows += `<div class="history-row"><span>Whole blood donation</span><span class="small-muted">${d.toLocaleDateString()}</span></div>`;
+      }
+      history.innerHTML = rows;
+    }
+  }
+
+  function loadSession() {
+    const id = DB.getSession();
+    if (!id) return;
+    const donor = DB.getDonor(id);
+    if (donor) renderDashboard(donor);
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', () => {
+    const phone = document.getElementById('loginPhone').value.trim();
+    const donor = DB.getDonors().find(d => d.phone.replace(/\s/g, '') === phone.replace(/\s/g, ''));
+    if (!donor) { Notify.toast('No donor found with that phone number. Try registering first.', 'info'); return; }
+    DB.setSession(donor.id);
+    renderDashboard(donor);
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    DB.clearSession();
+    document.getElementById('dashPanel').style.display = 'none';
+    document.getElementById('loginPanel').style.display = 'block';
+  });
+
+  document.getElementById('availToggle').addEventListener('change', (e) => {
+    const id = DB.getSession();
+    const donor = DB.updateDonor(id, { available: e.target.checked });
+    Notify.toast(donor.available ? "You're marked as available for emergency alerts." : "You're now hidden from emergency alerts.", 'success');
+  });
+
+  document.getElementById('logDonationBtn').addEventListener('click', () => {
+    const id = DB.getSession();
+    const current = DB.getDonor(id);
+    const updated = DB.updateDonor(id, { donations: (current.donations || 0) + 1 });
+    renderDashboard(updated);
+    Notify.toast('Donation logged — thank you for saving lives!', 'success');
+  });
+
+  loadSession();
+</script>
+</body>
+</html>

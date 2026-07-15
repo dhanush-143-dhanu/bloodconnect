@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Donors — BloodConnect</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2141B">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" fill="white" fill-opacity="0.9"/></svg></span>
+    <span class="brand-text"><b>Blood<span>Connect</span></b><small>SAVE LIFE, DONATE BLOOD</small></span>
+  </a>
+  <nav class="main-nav">
+    <a href="index.html">Home</a>
+    <a href="index.html#about">About Us</a>
+    <a href="find-donors.html" class="active">Find Donors</a>
+    <a href="index.html#blood-banks">Blood Banks</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+  <div class="header-actions">
+    <a href="dashboard.html" class="btn btn-outline">Login</a>
+    <a href="register.html" class="btn btn-primary">Register</a>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">FIND DONORS</span>
+    <h1>Search donors near you</h1>
+    <p>Results are sorted by real distance and filtered for true blood-type compatibility, not just an exact group match.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:26px;">
+  <div class="container">
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="finder-fields" style="grid-template-columns:1fr 1fr 0.8fr auto;">
+        <div class="field">
+          <label>Blood Group Needed</label>
+          <select id="fltGroup">
+            <option value="">Any group</option>
+            <option>O-</option><option>O+</option><option>A-</option><option>A+</option>
+            <option>B-</option><option>B+</option><option>AB-</option><option>AB+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <button type="button" class="btn btn-outline-red btn-block" id="locateBtn" style="justify-content:flex-start;">📍 <span id="locateLabel">Use My Location</span></button>
+        </div>
+        <div class="field">
+          <label>Radius</label>
+          <select id="fltRadius">
+            <option value="5">5 Km</option>
+            <option value="10" selected>10 Km</option>
+            <option value="15">15 Km</option>
+            <option value="25">25 Km</option>
+            <option value="99999">Any distance</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="searchBtn">Search Donors
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="white" stroke-width="2"/><path d="m21 21-4.3-4.3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="results-layout">
+      <div>
+        <div class="flex-between" style="margin-bottom:14px;">
+          <span id="resultCount" class="small-muted">Searching…</span>
+          <label class="small-muted"><input type="checkbox" id="onlyAvailable" checked style="margin-right:6px;">Available only</label>
+        </div>
+        <div id="donorResults"></div>
+      </div>
+      <div id="donorMap"></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container footer-bottom">
+    <span>© 2026 BloodConnect. Demo project for educational purposes.</span>
+    <span><a href="index.html">Back to home</a></span>
+  </div>
+</footer>
+
+<script src="js/storage.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/seed.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  seedIfEmpty();
+
+  const params = new URLSearchParams(window.location.search);
+  let userLoc = null;
+  if (params.get('lat') && params.get('lng')) {
+    userLoc = { lat: parseFloat(params.get('lat')), lng: parseFloat(params.get('lng')) };
+  }
+  if (params.get('group')) document.getElementById('fltGroup').value = params.get('group');
+  if (params.get('radius')) document.getElementById('fltRadius').value = params.get('radius');
+
+  const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 };
+  let map = L.map('donorMap').setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  let userMarker = null, radiusCircle = null;
+  let donorMarkers = [];
+
+  function clearDonorMarkers() { donorMarkers.forEach(m => map.removeLayer(m)); donorMarkers = []; }
+
+  function renderMapCenter(loc, radiusKm) {
+    if (userMarker) map.removeLayer(userMarker);
+    if (radiusCircle) map.removeLayer(radiusCircle);
+    userMarker = L.circleMarker([loc.lat, loc.lng], { radius: 8, color: '#E2141B', fillColor: '#E2141B', fillOpacity: 1 })
+      .addTo(map).bindPopup('You are here');
+    if (radiusKm < 9000) {
+      radiusCircle = L.circle([loc.lat, loc.lng], { radius: radiusKm * 1000, color: '#E2141B', fillColor: '#E2141B', fillOpacity: 0.06, weight: 1 }).addTo(map);
+    }
+    map.setView([loc.lat, loc.lng], radiusKm > 20 ? 10 : 12);
+  }
+
+  function runSearch() {
+    const group = document.getElementById('fltGroup').value;
+    const radius = parseFloat(document.getElementById('fltRadius').value);
+    const onlyAvailable = document.getElementById('onlyAvailable').checked;
+    const center = userLoc || DEFAULT_CENTER;
+
+    renderMapCenter(center, radius);
+    clearDonorMarkers();
+
+    let donors = DB.getDonors().map(d => ({ ...d, distance: Geo.distanceKm(center, { lat: d.lat, lng: d.lng }) }));
+    if (group) donors = donors.filter(d => Matching.isCompatible(d.bloodGroup, group));
+    if (onlyAvailable) donors = donors.filter(d => d.available);
+    donors = donors.filter(d => d.distance <= radius).sort((a, b) => a.distance - b.distance);
+
+    document.getElementById('resultCount').textContent = `${donors.length} donor${donors.length !== 1 ? 's' : ''} found within ${radius >= 9000 ? 'any distance' : radius + ' km'}`;
+
+    const list = document.getElementById('donorResults');
+    if (donors.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13Z" stroke="#A8A3AC" stroke-width="1.6"/></svg>
+        <div><strong>No donors match yet.</strong></div>
+        <div class="small-muted">Try widening the radius or clearing the blood group filter.</div>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = donors.map(d => `
+      <div class="donor-item">
+        <div class="donor-avatar">${d.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+        <div class="meta">
+          <b>${d.name}</b>
+          <span><span class="bg-tag">${d.bloodGroup}</span>${d.available ? '<span class="badge-avail">Available</span>' : '<span class="badge-unavail">Unavailable</span>'}</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="dist-chip">${d.distance.toFixed(1)} km away</div>
+          <div class="small-muted">${Matching.compatibilityScoreLabel(d.bloodGroup, group || d.bloodGroup)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    donors.forEach(d => {
+      const m = L.circleMarker([d.lat, d.lng], {
+        radius: 7,
+        color: d.available ? '#1B8A4B' : '#A8A3AC',
+        fillColor: d.available ? '#1B8A4B' : '#A8A3AC',
+        fillOpacity: 0.85,
+      }).addTo(map).bindPopup(`<strong>${d.name}</strong><br>${d.bloodGroup} · ${d.distance.toFixed(1)} km<br>${d.available ? 'Available' : 'Unavailable'}`);
+      donorMarkers.push(m);
+    });
+  }
+
+  document.getElementById('locateBtn').addEventListener('click', async () => {
+    document.getElementById('locateLabel').textContent = 'Locating…';
+    try {
+      userLoc = await Geo.locate();
+      document.getElementById('locateLabel').textContent = 'Location set ✓';
+      runSearch();
+    } catch (e) {
+      document.getElementById('locateLabel').textContent = 'Use My Location';
+      Notify.toast('Could not access location — showing results around the default city center.', 'info');
+    }
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', runSearch);
+  document.getElementById('onlyAvailable').addEventListener('change', runSearch);
+  document.getElementById('fltGroup').addEventListener('change', runSearch);
+  document.getElementById('fltRadius').addEventListener('change', runSearch);
+
+  runSearch();
+</script>
+</body>
+</html>

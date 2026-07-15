@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BloodConnect — Find Blood Donors, Save Lives</title>
+<meta name="description" content="Emergency Blood Donor Finder: real-time location tracking, instant blood-group matching and live alerts to connect patients with nearby donors in minutes.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E2141B">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" stroke="white" stroke-width="1.6" fill="white" fill-opacity="0.15"/><path d="M9 15h1.5l1-2 1.5 4 1-2H15" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <span class="brand-text"><b>Blood<span>Connect</span></b><small>SAVE LIFE, DONATE BLOOD</small></span>
+  </a>
+  <nav class="main-nav">
+    <a href="index.html" class="active">Home</a>
+    <a href="index.html#about">About Us</a>
+    <a href="find-donors.html">Find Donors</a>
+    <a href="index.html#blood-banks">Blood Banks</a>
+    <a href="index.html#how-it-works">How It Works</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+  <div class="header-actions">
+    <a href="dashboard.html" class="btn btn-outline">Login</a>
+    <a href="register.html" class="btn btn-primary">Register</a>
+  </div>
+  <button class="nav-toggle" aria-label="Menu" onclick="document.querySelector('.main-nav').classList.toggle('open')">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="#17151A" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="top">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> LIVE · <span id="activeDonorCount">—</span> active donors right now</span>
+      <h1>Find Blood Donors<br>Save <span class="accent">Lives</span></h1>
+      <p class="lead">Emergency Blood Donor Finder helps you find nearby, verified blood donors in minutes — filtered instantly by blood group, real-time distance and availability.</p>
+      <div class="hero-cta">
+        <a href="find-donors.html" class="btn btn-primary">Find Donors Now
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="register.html" class="btn btn-outline-red">I Want To Donate
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9Z" stroke="#E2141B" stroke-width="1.6"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-art text-center">
+      <div class="pulse-ring">
+        <svg viewBox="0 0 340 340">
+          <circle cx="170" cy="170" r="150" fill="none" stroke="#FFD9D7" stroke-width="1.5"/>
+          <circle cx="170" cy="170" r="150" fill="none" stroke="#E2141B" stroke-width="2" stroke-dasharray="6 10" opacity="0.5">
+            <animateTransform attributeName="transform" type="rotate" from="0 170 170" to="360 170 170" dur="40s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="170" cy="170" r="105" fill="none" stroke="#FFC6C3" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <svg width="240" height="240" viewBox="0 0 240 240" style="position:relative;">
+        <path d="M120 30C120 30 60 100 60 145a60 60 0 0 0 120 0C180 100 120 30 120 30Z" fill="#E2141B"/>
+        <rect x="82" y="150" width="76" height="46" rx="6" fill="#fff"/>
+        <text x="120" y="168" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="700" font-size="15" fill="#E2141B">BLOOD</text>
+        <text x="112" y="186" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="800" font-size="16" fill="#17151A">A+</text>
+        <path d="M40 200c30 30 130 30 160 0" stroke="#E2141B" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="pulse-divider" aria-hidden="true">
+    <svg viewBox="0 0 600 46" preserveAspectRatio="none">
+      <path d="M0 23 H150 L165 5 L180 40 L195 10 L210 23 H600 V46 H0 Z" fill="#FFF3F2"/>
+      <path d="M0 23 H150 L165 5 L180 40 L195 10 L210 23 H600" fill="none" stroke="#E2141B" stroke-width="2"/>
+      <path d="M600 23 H750 L765 5 L780 40 L795 10 L810 23 H1200" fill="none" stroke="#E2141B" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="container">
+    <div class="finder-card">
+      <h3>Find Donors</h3>
+      <p>Search for blood donors near you</p>
+      <form class="finder-fields" id="quickFinderForm">
+        <div class="field">
+          <label>Select Blood Group</label>
+          <select id="qfGroup" required>
+            <option value="">Select Blood Group</option>
+            <option>O-</option><option>O+</option><option>A-</option><option>A+</option>
+            <option>B-</option><option>B+</option><option>AB-</option><option>AB+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Select Location</label>
+          <input id="qfLocation" placeholder="Enter Your Location or use GPS" readonly>
+        </div>
+        <div class="field">
+          <label>Radius</label>
+          <select id="qfRadius">
+            <option value="5">5 Km</option>
+            <option value="10">10 Km</option>
+            <option value="15">15 Km</option>
+            <option value="25">25 Km</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Search Donors
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="white" stroke-width="2"/><path d="m21 21-4.3-4.3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat">
+        <span class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17 20a5 5 0 0 0-10 0M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM21 20a5 5 0 0 0-4-4.9M3 20a5 5 0 0 1 4-4.9M17 8a4 4 0 0 1 0 8M7 8a4 4 0 0 0 0 8" stroke="#E2141B" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        <div><b id="statDonors">0+</b><span>Active Donors</span></div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13Z" stroke="#E2141B" stroke-width="1.6"/></svg></span>
+        <div><b id="statRequests">1200+</b><span>Blood Requests Fulfilled</span></div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 21V9l8-5 8 5v12M9 21v-6h6v6" stroke="#E2141B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div><b>200+</b><span>Hospitals Connected</span></div>
+      </div>
+      <div class="stat">
+        <span class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z" stroke="#E2141B" stroke-width="1.6"/></svg></span>
+        <div><b id="statLives">0+</b><span>Estimated Lives Saveable</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ABOUT ===================== -->
+<section class="section" id="about">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">ABOUT US</span>
+      <h2>Built for the minutes that matter most</h2>
+      <p>Traditional donor search means phone trees, hospital calls and hoping a blood bank has stock. BloodConnect replaces that with instant, location-aware matching — cutting the search from hours to minutes.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21c4.4-4 8-7.4 8-11.5A5.5 5.5 0 0 0 12 6a5.5 5.5 0 0 0-8 3.5C4 13.6 7.6 17 12 21Z" stroke="#E2141B" stroke-width="1.6"/></svg></div>
+        <h4>Live location matching</h4>
+        <p>Donors and requests are matched using precise geo-coordinates and the Haversine distance formula — no guessing which "area" someone is in.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13Z" stroke="#E2141B" stroke-width="1.6"/></svg></div>
+        <h4>True compatibility, not just group</h4>
+        <p>We match on real donor→recipient compatibility (e.g. O- to everyone), so a request never misses an eligible donor.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 11-14h-7l0-6Z" stroke="#E2141B" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        <h4>Instant alerts, first-accept wins</h4>
+        <p>Nearby eligible donors are notified simultaneously; whoever accepts first is connected — no delay waiting on a single contact.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section class="section" id="how-it-works" style="background:var(--pink-50);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">HOW IT WORKS</span>
+      <h2>From request to reply in three steps</h2>
+    </div>
+    <div class="grid-3">
+      <div class="step"><span class="step-num">1</span>
+        <h4>Register with live location</h4>
+        <p>Donors sign up with their blood group and share their live location once — the app keeps a distance-ready profile on file.</p>
+      </div>
+      <div class="step"><span class="step-num">2</span>
+        <h4>Emergency request raised</h4>
+        <p>A patient or hospital selects the required group and urgency. BloodConnect searches a 5–25&nbsp;km radius instantly.</p>
+      </div>
+      <div class="step"><span class="step-num">3</span>
+        <h4>Simultaneous alerts sent</h4>
+        <p>Every compatible, available donor nearby is notified at once. The first to accept is connected directly to the requester.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BLOOD BANKS ===================== -->
+<section class="section" id="blood-banks">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">BLOOD BANKS</span>
+      <h2>Hospitals can search too</h2>
+      <p>Verified hospitals and blood banks use the same real-time finder to locate donors during shortages, without waiting on manual donor lists.</p>
+    </div>
+    <div class="grid-4">
+      <div class="card"><div class="icon-badge">🏥</div><h4>Hospital access</h4><p>Dedicated search for verified hospital staff during active emergencies.</p></div>
+      <div class="card"><div class="icon-badge">📍</div><h4>Radius control</h4><p>Search 5, 10, 15 or 25&nbsp;km out, widening automatically if no match is found.</p></div>
+      <div class="card"><div class="icon-badge">🩸</div><h4>Inventory-aware</h4><p>Pairs donor search with blood-bank stock so the closest real option always surfaces first.</p></div>
+      <div class="card"><div class="icon-badge">✅</div><h4>Verified donors</h4><p>Every donor profile is eligibility-checked before it appears in emergency search results.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA ===================== -->
+<div class="cta-band">
+  <div>
+    <h3>Be a Hero, Donate Blood</h3>
+    <p>Your one step can save someone's life.</p>
+  </div>
+  <a href="register.html" class="btn btn-outline">Register as Donor
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</div>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="section" id="contact" style="padding-top:0;">
+  <div class="container">
+    <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;">
+      <div>
+        <span class="eyebrow">CONTACT</span>
+        <h2 style="font-family:var(--font-display);font-size:24px;margin:10px 0;">Have a question or a partnership idea?</h2>
+        <p class="small-muted">Reach the BloodConnect team — for hospitals wanting onboarding, or donors with feedback.</p>
+        <p style="margin-top:16px;font-size:14px;"><strong>Email:</strong> hello@bloodconnect.example<br><strong>Emergency line:</strong> shown after you raise a request</p>
+      </div>
+      <form onsubmit="event.preventDefault(); Notify.toast('Message sent — we\'ll get back to you shortly.', 'success');" style="display:grid;gap:12px;">
+        <input class="field-block" style="padding:12px 14px;border:1.5px solid #E7E3E7;border-radius:12px;" placeholder="Your name" required>
+        <input style="padding:12px 14px;border:1.5px solid #E7E3E7;border-radius:12px;" type="email" placeholder="Email address" required>
+        <textarea style="padding:12px 14px;border:1.5px solid #E7E3E7;border-radius:12px;min-height:90px;" placeholder="Message"></textarea>
+        <button class="btn btn-primary" type="submit">Send Message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand" style="margin-bottom:12px;">
+          <span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 2 5 10.5 5 15a7 7 0 0 0 14 0C19 10.5 12 2 12 2Z" fill="white" fill-opacity="0.9"/></svg></span>
+          <span class="brand-text"><b style="color:#fff;">Blood<span>Connect</span></b></span>
+        </div>
+        <p style="font-size:13px;max-width:260px;">A location-aware emergency blood donor finder — connecting patients, hospitals and donors in minutes.</p>
+      </div>
+      <div><h5>Product</h5><ul>
+        <li><a href="find-donors.html">Find Donors</a></li>
+        <li><a href="register.html">Become a Donor</a></li>
+        <li><a href="emergency.html">Raise Emergency Request</a></li>
+        <li><a href="dashboard.html">Donor Dashboard</a></li>
+      </ul></div>
+      <div><h5>Company</h5><ul>
+        <li><a href="index.html#about">About Us</a></li>
+        <li><a href="index.html#how-it-works">How It Works</a></li>
+        <li><a href="index.html#blood-banks">Blood Banks</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+      </ul></div>
+      <div><h5>Legal</h5><ul>
+        <li>Privacy Policy</li>
+        <li>Terms of Service</li>
+        <li>Donor Eligibility</li>
+      </ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 BloodConnect. Demo project for educational purposes.</span>
+      <span>Made to save lives, one match at a time.</span>
+    </div>
+  </div>
+</footer>
+
+<a href="emergency.html" class="sos-fab">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 11-14h-7l0-6Z" fill="white"/></svg>
+  Emergency SOS
+</a>
+
+<script src="js/storage.js"></script>
+<script src="js/geo.js"></script>
+<script src="js/matching.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/seed.js"></script>
+<script>
+  seedIfEmpty();
+
+  const donors = DB.getDonors();
+  const activeDonors = donors.filter(d => d.available).length;
+  document.getElementById('activeDonorCount').textContent = activeDonors;
+  document.getElementById('statDonors').textContent = (donors.length + 5000) + '+';
+  document.getElementById('statRequests').textContent = DB.getRequests().length + 1200 + '+';
+  // Each whole-blood donation can help up to 3 recipients — a real, citable stat we reuse for a live counter
+  document.getElementById('statLives').textContent = ((donors.length + 5000) * 3) + '+';
+
+  let capturedLocation = null;
+  document.getElementById('qfLocation').addEventListener('click', async () => {
+    const input = document.getElementById('qfLocation');
+    input.value = 'Locating…';
+    try {
+      capturedLocation = await Geo.locate();
+      input.value = `Lat ${capturedLocation.lat.toFixed(3)}, Lng ${capturedLocation.lng.toFixed(3)}`;
+    } catch (e) {
+      input.value = '';
+      Notify.toast('Could not get your location. You can still search — a default city center will be used.', 'info');
+    }
+  });
+  document.getElementById('qfLocation').removeAttribute('readonly');
+  document.getElementById('qfLocation').addEventListener('focus', e => e.target.blur());
+
+  document.getElementById('quickFinderForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const group = document.getElementById('qfGroup').value;
+    const radius = document.getElementById('qfRadius').value;
+    const params = new URLSearchParams();
+    if (group) params.set('group', group);
+    params.set('radius', radius);
+    if (capturedLocation) { params.set('lat', capturedLocation.lat); params.set('lng', capturedLocation.lng); }
+    window.location.href = 'find-donors.html?' + params.toString();
+  });
+</script>
+</body>
+</html>
